@@ -7,96 +7,128 @@
   <style>
     body {
       margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #000;
-      color: #fff;
-      font-family: 'Arial', sans-serif;
-      text-align: center;
+      color: #ff0000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
 
     h1 {
-      font-size: 2.5em;
-      margin-top: 50px;
-      color: red;
-      text-shadow: 2px 2px 5px black;
+      font-size: 2em;
+      text-shadow: 0 0 10px red;
+      margin-bottom: 20px;
     }
 
-    p {
-      font-size: 1.2em;
-      margin: 20px;
-    }
-
-    .contract-box {
+    .box {
       background-color: #111;
-      padding: 20px;
-      border-radius: 8px;
-      display: inline-block;
-      margin-top: 20px;
+      padding: 20px 30px;
+      border-radius: 15px;
+      border: 2px solid red;
+      text-align: center;
+      box-shadow: 0 0 20px red;
     }
 
-    .address {
-      font-family: monospace;
-      font-size: 1.1em;
-      margin-bottom: 10px;
-    }
-
-    button {
-      background-color: #c00;
+    .info {
       color: #fff;
-      padding: 12px 25px;
-      font-size: 1em;
+      font-size: 0.95em;
+      line-height: 1.6em;
+    }
+
+    .btn {
+      background-color: red;
+      color: #fff;
+      padding: 10px 20px;
+      margin-top: 15px;
       border: none;
+      cursor: pointer;
+      font-weight: bold;
       border-radius: 5px;
+    }
+
+    .btn:hover {
+      background-color: darkred;
+    }
+
+    .contract {
+      margin-top: 20px;
+      font-size: 0.8em;
+      color: #fff;
+    }
+
+    .copy-btn {
+      margin-top: 5px;
+      font-size: 0.8em;
+      background-color: #333;
+      color: #fff;
+      padding: 6px 12px;
+      border: 1px solid red;
+      border-radius: 4px;
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: #900;
-    }
-
-    .countdown {
-      font-size: 1.5em;
+    footer {
       margin-top: 30px;
+      font-size: 0.75em;
+      color: gray;
     }
   </style>
 </head>
 <body>
-  <h1>🚨 Demon Slayer Coin (DSC) 🚨</h1>
-  <p>عملة مستوحاة من عالم قاتل الشياطين. استثمر الآن قبل فوات الأوان!</p>
 
-  <div class="contract-box">
-    <div class="address" id="wallet">0xE94De7162C73Cb6a774079c5398A80A5C0254cd6</div>
-    <button onclick="copyAddress()">📋 نسخ العنوان</button>
+  <h1>Demon Slayer Coin (DSC)</h1>
+
+  <div class="box">
+    <div class="info">
+      <p>🔥 Price: 0.00000727 BNB per DSC</p>
+      <p>Total Supply: 1,000,000,000</p>
+      <p>Presale Supply: 500,000,000</p>
+    </div>
+
+    <button class="btn" onclick="buyToken()">Buy Now with MetaMask</button>
+
+    <div class="contract">
+      Contract Address:<br>
+      <span id="contract">0x2106b5C4A249cAc7e27b7BE165517b43a00b290a</span><br>
+      <button class="copy-btn" onclick="copyAddress()">Copy Contract</button>
+    </div>
   </div>
 
-  <div class="countdown" id="countdown">ينتهي البيع بعد: ...</div>
+  <footer>
+    © 2025 Demon Slayer Coin. All rights reserved.
+  </footer>
 
   <script>
-    function copyAddress() {
-      const address = document.getElementById("wallet").innerText;
-      navigator.clipboard.writeText(address);
-      alert("✅ تم نسخ العنوان");
+    async function buyToken() {
+      const amount = prompt("Enter amount of DSC you want to buy:");
+      if (!amount || isNaN(amount)) return alert("Invalid amount");
+
+      const priceBNB = 0.00000727;
+      const totalBNB = amount * priceBNB;
+      const contract = "0x2106b5C4A249cAc7e27b7BE165517b43a00b290a";
+
+      if (typeof window.ethereum !== "undefined") {
+        const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+        const tx = {
+          to: contract,
+          value: (totalBNB * 1e18).toString(16)
+        };
+        await ethereum.request({ method: "eth_sendTransaction", params: [tx] });
+        alert("Transaction sent!");
+      } else {
+        alert("MetaMask not detected!");
+      }
     }
 
-    // العداد التنازلي
-    const endDate = new Date("2025-08-15T23:59:59").getTime();
-    const timer = setInterval(function () {
-      const now = new Date().getTime();
-      const distance = endDate - now;
-
-      if (distance < 0) {
-        clearInterval(timer);
-        document.getElementById("countdown").innerHTML = "✅ انتهى البيع.";
-        return;
-      }
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      document.getElementById("countdown").innerHTML = `ينتهي البيع بعد: ${days} يوم ${hours} ساعة ${minutes} دقيقة ${seconds} ثانية`;
-    }, 1000);
+    function copyAddress() {
+      const text = document.getElementById("contract").innerText;
+      navigator.clipboard.writeText(text);
+      alert("Copied!");
+    }
   </script>
+
 </body>
 </html>
