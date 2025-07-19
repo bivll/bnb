@@ -1,154 +1,498 @@
-<<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Demon Slayer Coin (DSC)</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #000;
-      color: #f00;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background-image: radial-gradient(circle at center, #111 0%, #000 100%);
+import {
+  users,
+  presaleConfig,
+  transactions,
+  presaleStats,
+  referrals,
+  referralRewards,
+  referralStats,
+  stakingPools,
+  userStakes,
+  vestingSchedules,
+  stakingRewards,
+  type User,
+  type UpsertUser,
+  type PresaleConfig,
+  type Transaction,
+  type InsertTransaction,
+  type PresaleStats,
+  type InsertPresaleConfig,
+  type SelectReferral,
+  type InsertReferral,
+  type SelectReferralReward,
+  type InsertReferralReward,
+  type SelectReferralStats,
+  type InsertReferralStats,
+  type SelectStakingPool,
+  type InsertStakingPool,
+  type SelectUserStake,
+  type InsertUserStake,
+  type SelectVestingSchedule,
+  type InsertVestingSchedule,
+  type SelectStakingReward,
+  type InsertStakingReward,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, sql } from "drizzle-orm";
+
+export interface IStorage {
+  // User operations (mandatory for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Presale configuration operations
+  getPresaleConfig(): Promise<PresaleConfig | undefined>;
+  updatePresaleConfig(config: InsertPresaleConfig): Promise<PresaleConfig>;
+  
+  // Transaction operations
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  getTransactionsByAddress(address: string): Promise<Transaction[]>;
+  getRecentTransactions(limit?: number): Promise<Transaction[]>;
+  updateTransactionStatus(id: string, status: string, blockNumber?: number): Promise<void>;
+  
+  // Statistics operations
+  getPresaleStats(): Promise<PresaleStats | undefined>;
+  updatePresaleStats(stats: Partial<PresaleStats>): Promise<PresaleStats>;
+  
+  // Referral operations
+  generateReferralCode(userId: string): Promise<string>;
+  createReferral(referral: InsertReferral): Promise<SelectReferral>;
+  getReferralByCode(code: string): Promise<SelectReferral | undefined>;
+  getReferralsByUser(userId: string): Promise<SelectReferral[]>;
+  confirmReferral(referralId: number, transactionId: string): Promise<void>;
+  
+  // Referral rewards operations
+  createReferralReward(reward: InsertReferralReward): Promise<SelectReferralReward>;
+  getReferralRewards(userId: string): Promise<SelectReferralReward[]>;
+  updateRewardStatus(rewardId: number, status: string, transactionHash?: string): Promise<void>;
+  
+  // Referral stats operations
+  getReferralStats(userId: string): Promise<SelectReferralStats | undefined>;
+  updateReferralStats(userId: string, stats: Partial<InsertReferralStats>): Promise<SelectReferralStats>;
+  
+  // Staking operations
+  getStakingPools(): Promise<SelectStakingPool[]>;
+  createStake(stake: InsertUserStake): Promise<SelectUserStake>;
+  getUserStakes(userId: string): Promise<SelectUserStake[]>;
+  withdrawStake(stakeId: number, penaltyWithdrawal?: boolean): Promise<void>;
+  calculateStakingRewards(stakeId: number): Promise<number>;
+  claimStakingRewards(stakeId: number, amount: string): Promise<void>;
+  
+  // Vesting operations
+  createVestingSchedule(vesting: InsertVestingSchedule): Promise<SelectVestingSchedule>;
+  getUserVestingSchedules(userId: string): Promise<SelectVestingSchedule[]>;
+  calculateVestedAmount(vestingId: number): Promise<number>;
+  claimVestedTokens(vestingId: number, amount: string): Promise<void>;
+}
+
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Presale configuration operations
+  async getPresaleConfig(): Promise<PresaleConfig | undefined> {
+    const [config] = await db.select().from(presaleConfig).where(eq(presaleConfig.id, 1));
+    return config;
+  }
+
+  async updatePresaleConfig(configData: InsertPresaleConfig): Promise<PresaleConfig> {
+    const [config] = await db
+      .insert(presaleConfig)
+      .values({ ...configData, id: 1 })
+      .onConflictDoUpdate({
+        target: presaleConfig.id,
+        set: {
+          ...configData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return config;
+  }
+
+  // Transaction operations
+  async createTransaction(transactionData: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(transactionData)
+      .returning();
+    return transaction;
+  }
+
+  async getTransactionsByAddress(address: string): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userAddress, address))
+      .orderBy(desc(transactions.createdAt));
+  }
+
+  async getRecentTransactions(limit: number = 10): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .orderBy(desc(transactions.createdAt))
+      .limit(limit);
+  }
+
+  async updateTransactionStatus(id: string, status: string, blockNumber?: number): Promise<void> {
+    await db
+      .update(transactions)
+      .set({ 
+        status, 
+        blockNumber,
+        updatedAt: new Date() 
+      })
+      .where(eq(transactions.id, id));
+  }
+
+  // Statistics operations
+  async getPresaleStats(): Promise<PresaleStats | undefined> {
+    const [stats] = await db.select().from(presaleStats).where(eq(presaleStats.id, 1));
+    return stats;
+  }
+
+  async updatePresaleStats(statsData: Partial<PresaleStats>): Promise<PresaleStats> {
+    const [stats] = await db
+      .insert(presaleStats)
+      .values({ ...statsData, id: 1 })
+      .onConflictDoUpdate({
+        target: presaleStats.id,
+        set: {
+          ...statsData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return stats;
+  }
+
+  // Referral operations
+  async generateReferralCode(userId: string): Promise<string> {
+    // Generate a unique 8-character referral code
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    
+    for (let i = 0; i < 8; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
-
-    .container {
-      text-align: center;
-      border: 2px solid #f00;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 0 30px #f00;
+    
+    // Check if code already exists
+    const existing = await db.select().from(users).where(eq(users.referralCode, code));
+    if (existing.length > 0) {
+      return this.generateReferralCode(userId); // Try again
     }
+    
+    return code;
+  }
 
-    h1 {
-      font-size: 2em;
-      margin-bottom: 20px;
-      color: #ff2e2e;
-      text-shadow: 0 0 10px #f00;
-    }
+  async createReferral(referralData: InsertReferral): Promise<SelectReferral> {
+    const [referral] = await db.insert(referrals).values(referralData).returning();
+    
+    // Update referrer stats
+    await this.updateReferralStats(referralData.referrerId, {
+      totalReferrals: sql`total_referrals + 1`
+    });
+    
+    return referral;
+  }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      margin: 10px 0 20px 0;
-    }
+  async getReferralByCode(code: string): Promise<SelectReferral | undefined> {
+    const [referral] = await db.select().from(referrals).where(eq(referrals.referralCode, code));
+    return referral;
+  }
 
-    li {
-      margin: 8px 0;
-      font-size: 1.1em;
-    }
+  async getReferralsByUser(userId: string): Promise<SelectReferral[]> {
+    return db.select().from(referrals).where(eq(referrals.referrerId, userId)).orderBy(desc(referrals.createdAt));
+  }
 
-    .button {
-      background-color: #ff0000;
-      color: #fff;
-      padding: 12px 25px;
-      font-size: 1em;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-bottom: 15px;
-      transition: background 0.3s;
-    }
-
-    .button:hover {
-      background-color: #cc0000;
-    }
-
-    .contract {
-      font-size: 0.9em;
-      margin: 10px 0;
-      color: #aaa;
-    }
-
-    .copy-button {
-      background: #444;
-      color: #fff;
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-
-    #countdown {
-      margin: 15px 0;
-      font-size: 1.2em;
-      color: #ffdddd;
-    }
-
-    footer {
-      margin-top: 25px;
-      font-size: 0.8em;
-      color: #777;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Demon Slayer Coin (DSC)</h1>
-    <ul>
-      <li>💰 Price: 0.00000777 BNB per DSC</li>
-      <li>📦 Total Supply: 1,000,000,000</li>
-      <li>🚀 Presale Supply: 500,000,000</li>
-    </ul>
-    <button class="button" onclick="connectWallet()">Buy Now with MetaMask</button>
-
-    <div id="countdown">⏳ Loading countdown...</div>
-
-    <div class="contract">
-      Contract Address: <br>
-      <span id="contract">0x2106b5C4A249cAc7e27b7BE165517b43a00b290a</span>
-      <button class="copy-button" onclick="copyContract()">Copy</button>
-    </div>
-
-    <footer>© 2025 Demon Slayer Coin. All rights reserved.</footer>
-  </div>
-
-  <script>
-    function connectWallet() {
-      if (typeof window.ethereum !== 'undefined') {
-        window.ethereum.request({ method: 'eth_requestAccounts' });
-      } else {
-        alert('MetaMask not detected. Please install it.');
-      }
-    }
-
-    function copyContract() {
-      const contract = document.getElementById("contract").innerText;
-      navigator.clipboard.writeText(contract).then(() => {
-        alert("Contract address copied!");
+  async confirmReferral(referralId: number, transactionId: string): Promise<void> {
+    await db.update(referrals)
+      .set({ 
+        status: 'confirmed', 
+        transactionId,
+        confirmedAt: new Date() 
+      })
+      .where(eq(referrals.id, referralId));
+      
+    // Get referral details for reward calculation
+    const [referral] = await db.select().from(referrals).where(eq(referrals.id, referralId));
+    if (referral) {
+      // Update referrer stats
+      await this.updateReferralStats(referral.referrerId, {
+        successfulReferrals: sql`successful_referrals + 1`
       });
-    }
-
-    // Countdown
-    const countdown = document.getElementById("countdown");
-    const endTime = new Date("2025-08-31T23:59:59").getTime();
-
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const distance = endTime - now;
-
-      if (distance < 0) {
-        countdown.innerHTML = "🔥 Presale Ended!";
-        return;
+      
+      // Calculate and create reward (5% bonus DSC tokens)
+      const rewardAmount = parseFloat(referral.rewardAmount || "0");
+      if (rewardAmount > 0) {
+        await this.createReferralReward({
+          userId: referral.referrerId,
+          referralId: referralId,
+          rewardType: 'bonus_tokens',
+          amount: rewardAmount.toString(),
+          currency: 'DSC',
+          status: 'pending'
+        });
       }
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      countdown.innerHTML = `⏳ Ends in: ${days}d ${hours}h ${minutes}m ${seconds}s`;
     }
+  }
 
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
-  </script>
-</body>
-</html>
+  // Referral rewards operations
+  async createReferralReward(rewardData: InsertReferralReward): Promise<SelectReferralReward> {
+    const [reward] = await db.insert(referralRewards).values(rewardData).returning();
+    
+    // Update stats
+    await this.updateReferralStats(rewardData.userId, {
+      pendingRewards: sql`pending_rewards + ${rewardData.amount}`
+    });
+    
+    return reward;
+  }
+
+  async getReferralRewards(userId: string): Promise<SelectReferralReward[]> {
+    return db.select().from(referralRewards).where(eq(referralRewards.userId, userId)).orderBy(desc(referralRewards.createdAt));
+  }
+
+  async updateRewardStatus(rewardId: number, status: string, transactionHash?: string): Promise<void> {
+    const updateData: any = { status };
+    if (transactionHash) updateData.transactionHash = transactionHash;
+    if (status === 'paid') updateData.paidAt = new Date();
+    
+    await db.update(referralRewards)
+      .set(updateData)
+      .where(eq(referralRewards.id, rewardId));
+      
+    // Update stats when reward is paid
+    if (status === 'paid') {
+      const [reward] = await db.select().from(referralRewards).where(eq(referralRewards.id, rewardId));
+      if (reward) {
+        await this.updateReferralStats(reward.userId, {
+          totalRewards: sql`total_rewards + ${reward.amount}`,
+          pendingRewards: sql`pending_rewards - ${reward.amount}`
+        });
+      }
+    }
+  }
+
+  // Referral stats operations
+  async getReferralStats(userId: string): Promise<SelectReferralStats | undefined> {
+    let [stats] = await db.select().from(referralStats).where(eq(referralStats.userId, userId));
+    
+    if (!stats) {
+      // Create initial stats
+      [stats] = await db.insert(referralStats).values({ userId }).returning();
+    }
+    
+    return stats;
+  }
+
+  async updateReferralStats(userId: string, statsUpdate: Partial<InsertReferralStats>): Promise<SelectReferralStats> {
+    const [stats] = await db.update(referralStats)
+      .set({ ...statsUpdate, updatedAt: new Date() })
+      .where(eq(referralStats.userId, userId))
+      .returning();
+      
+    return stats;
+  }
+
+  // Staking operations
+  async getStakingPools(): Promise<SelectStakingPool[]> {
+    return db.select().from(stakingPools).where(eq(stakingPools.active, true)).orderBy(stakingPools.duration);
+  }
+
+  async createStake(stakeData: InsertUserStake): Promise<SelectUserStake> {
+    const [stake] = await db.insert(userStakes).values(stakeData).returning();
+    
+    // Update pool total
+    await db.update(stakingPools)
+      .set({ 
+        totalStaked: sql`total_staked + ${stakeData.amount}`,
+        updatedAt: new Date()
+      })
+      .where(eq(stakingPools.id, stakeData.poolId));
+    
+    return stake;
+  }
+
+  async getUserStakes(userId: string): Promise<SelectUserStake[]> {
+    return db.select().from(userStakes).where(eq(userStakes.userId, userId)).orderBy(desc(userStakes.createdAt));
+  }
+
+  async withdrawStake(stakeId: number, penaltyWithdrawal: boolean = false): Promise<void> {
+    const [stake] = await db.select().from(userStakes).where(eq(userStakes.id, stakeId));
+    if (!stake) throw new Error("Stake not found");
+
+    const status = penaltyWithdrawal ? 'penalty_withdrawn' : 'withdrawn';
+    
+    await db.update(userStakes)
+      .set({ 
+        status,
+        withdrawnDate: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(userStakes.id, stakeId));
+
+    // Update pool total
+    await db.update(stakingPools)
+      .set({ 
+        totalStaked: sql`total_staked - ${stake.amount}`,
+        updatedAt: new Date()
+      })
+      .where(eq(stakingPools.id, stake.poolId));
+  }
+
+  async calculateStakingRewards(stakeId: number): Promise<number> {
+    const [stake] = await db.select({
+      stake: userStakes,
+      pool: stakingPools
+    })
+    .from(userStakes)
+    .innerJoin(stakingPools, eq(userStakes.poolId, stakingPools.id))
+    .where(eq(userStakes.id, stakeId));
+
+    if (!stake) return 0;
+
+    const now = new Date();
+    const stakingDate = new Date(stake.stake.stakingDate);
+    const daysStaked = Math.floor((now.getTime() - stakingDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Calculate daily reward based on APR
+    const dailyRate = parseFloat(stake.pool.apr) / 365 / 100;
+    const totalRewards = parseFloat(stake.stake.amount) * dailyRate * daysStaked;
+    
+    return Math.max(0, totalRewards - parseFloat(stake.stake.rewardsClaimed));
+  }
+
+  async claimStakingRewards(stakeId: number, amount: string): Promise<void> {
+    await db.update(userStakes)
+      .set({ 
+        rewardsEarned: sql`rewards_earned + ${amount}`,
+        rewardsClaimed: sql`rewards_claimed + ${amount}`,
+        updatedAt: new Date()
+      })
+      .where(eq(userStakes.id, stakeId));
+      
+    // Record reward claim
+    await db.insert(stakingRewards).values({
+      stakeId,
+      userId: (await db.select().from(userStakes).where(eq(userStakes.id, stakeId)))[0].userId,
+      amount,
+      rewardType: 'claimed',
+      claimed: true,
+      claimedAt: new Date()
+    });
+  }
+
+  // Vesting operations
+  async createVestingSchedule(vestingData: InsertVestingSchedule): Promise<SelectVestingSchedule> {
+    const [vesting] = await db.insert(vestingSchedules).values(vestingData).returning();
+    return vesting;
+  }
+
+  async getUserVestingSchedules(userId: string): Promise<SelectVestingSchedule[]> {
+    return db.select().from(vestingSchedules)
+      .where(and(eq(vestingSchedules.userId, userId), eq(vestingSchedules.isActive, true)))
+      .orderBy(desc(vestingSchedules.createdAt));
+  }
+
+  async calculateVestedAmount(vestingId: number): Promise<number> {
+    const [vesting] = await db.select().from(vestingSchedules).where(eq(vestingSchedules.id, vestingId));
+    if (!vesting) return 0;
+
+    const now = new Date();
+    const startDate = new Date(vesting.startDate);
+    const endDate = new Date(vesting.endDate);
+    
+    // If before start date, nothing is vested
+    if (now < startDate) return 0;
+    
+    // If after end date, everything is vested
+    if (now >= endDate) return parseFloat(vesting.totalAmount);
+    
+    // Handle cliff vesting
+    if (vesting.cliffDate && now < new Date(vesting.cliffDate)) {
+      return 0;
+    }
+    
+    // Linear vesting calculation
+    const totalDuration = endDate.getTime() - startDate.getTime();
+    const elapsedTime = now.getTime() - startDate.getTime();
+    const vestingProgress = elapsedTime / totalDuration;
+    
+    const vestedAmount = parseFloat(vesting.totalAmount) * vestingProgress;
+    return Math.max(0, vestedAmount - parseFloat(vesting.claimedAmount));
+  }
+
+  async claimVestedTokens(vestingId: number, amount: string): Promise<void> {
+    await db.update(vestingSchedules)
+      .set({ 
+        vestedAmount: sql`vested_amount + ${amount}`,
+        claimedAmount: sql`claimed_amount + ${amount}`,
+        updatedAt: new Date()
+      })
+      .where(eq(vestingSchedules.id, vestingId));
+  }
+
+  // Notification methods (temporary implementation until DB schema is updated)
+  async getNotificationPreferences(userId: string): Promise<any> {
+    return {
+      id: 1,
+      userId,
+      emailNotifications: true,
+      presaleUpdates: true,
+      stakingRewards: true,
+      referralBonuses: true,
+      vestingUnlocks: true,
+      marketingEmails: false,
+      securityAlerts: true,
+      frequency: 'instant',
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async updateNotificationPreferences(userId: string, updates: any): Promise<any> {
+    return {
+      id: 1,
+      userId,
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async getEmailHistory(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  async logEmailSent(emailData: any): Promise<any> {
+    return {
+      id: Date.now(),
+      ...emailData,
+      sentAt: new Date().toISOString()
+    };
+  }
+
+  async markEmailOpened(emailId: number): Promise<void> {
+    console.log(`Email ${emailId} opened`);
+  }
+}
+
+export const storage = new DatabaseStorage();
