@@ -5,94 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Demon Slayer Coin (DSC)</title>
   <style>
-    html, body {
+    body {
       margin: 0;
       padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Arial', sans-serif;
+      background-color: #000;
       color: #fff;
+      font-family: 'Arial', sans-serif;
       text-align: center;
     }
 
-    video.bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      min-width: 100%;
-      min-height: 100%;
-      z-index: -1;
-      object-fit: cover;
+    h1 {
+      font-size: 2.5em;
+      margin-top: 50px;
+      color: red;
+      text-shadow: 2px 2px 5px black;
     }
 
-    .overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.6);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+    p {
+      font-size: 1.2em;
+      margin: 20px;
+    }
+
+    .contract-box {
+      background-color: #111;
       padding: 20px;
-    }
-
-    .btn {
-      background: red;
-      border: none;
-      color: white;
-      padding: 12px 24px;
-      font-size: 18px;
+      border-radius: 8px;
+      display: inline-block;
       margin-top: 20px;
+    }
+
+    .address {
+      font-family: monospace;
+      font-size: 1.1em;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background-color: #c00;
+      color: #fff;
+      padding: 12px 25px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
-      border-radius: 6px;
     }
 
-    .btn:hover {
-      background: darkred;
+    button:hover {
+      background-color: #900;
     }
 
-    .contract {
-      margin-top: 10px;
-      background: rgba(255,255,255,0.1);
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 16px;
-      word-break: break-all;
+    .countdown {
+      font-size: 1.5em;
+      margin-top: 30px;
     }
   </style>
 </head>
 <body>
+  <h1>🚨 Demon Slayer Coin (DSC) 🚨</h1>
+  <p>عملة مستوحاة من عالم قاتل الشياطين. استثمر الآن قبل فوات الأوان!</p>
 
-<video class="bg" autoplay muted loop>
-  <source src="https://files.catbox.moe/qshdf6.mp4" type="video/mp4">
-  متصفحك لا يدعم الفيديو.
-</video>
+  <div class="contract-box">
+    <div class="address" id="wallet">0xE94De7162C73Cb6a774079c5398A80A5C0254cd6</div>
+    <button onclick="copyAddress()">📋 نسخ العنوان</button>
+  </div>
 
-<audio autoplay loop>
-  <source src="https://files.catbox.moe/lhdnkl.mp3" type="audio/mp3">
-</audio>
+  <div class="countdown" id="countdown">ينتهي البيع بعد: ...</div>
 
-<div class="overlay">
-  <h1>Demon Slayer Coin (DSC)</h1>
-  <p>انضم إلى أقوى مشروع مستوحى من أنمي قاتل الشياطين!</p>
+  <script>
+    function copyAddress() {
+      const address = document.getElementById("wallet").innerText;
+      navigator.clipboard.writeText(address);
+      alert("✅ تم نسخ العنوان");
+    }
 
-  <div class="contract" id="wallet">0xE94De7162C73Cb6a774079c5398A80A5C0254cd6</div>
-  <button class="btn" onclick="copyWallet()">📋 نسخ العنوان</button>
-  <a href="https://pancakeswap.finance" target="_blank">
-    <button class="btn">🛒 شراء العملة</button>
-  </a>
-</div>
+    // العداد التنازلي
+    const endDate = new Date("2025-08-15T23:59:59").getTime();
+    const timer = setInterval(function () {
+      const now = new Date().getTime();
+      const distance = endDate - now;
 
-<script>
-  function copyWallet() {
-    const address = document.getElementById("wallet").textContent;
-    navigator.clipboard.writeText(address);
-    alert("تم نسخ عنوان العقد");
-  }
-</script>
+      if (distance < 0) {
+        clearInterval(timer);
+        document.getElementById("countdown").innerHTML = "✅ انتهى البيع.";
+        return;
+      }
 
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById("countdown").innerHTML = `ينتهي البيع بعد: ${days} يوم ${hours} ساعة ${minutes} دقيقة ${seconds} ثانية`;
+    }, 1000);
+  </script>
 </body>
 </html>
