@@ -1,87 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Demon Slayer Coin (DSC)</title>
   <style>
     body {
       margin: 0;
+      padding: 0;
       font-family: Arial, sans-serif;
-      color: red;
-      text-align: center;
-      background: black url('https://media.giphy.com/media/du3J3cXyzhj75IOgvA/giphy.gif') no-repeat center center fixed;
+      background-image: url('https://media.tenor.com/eZ6h0DFvmJIAAAAC/kimetsu-no-yaiba.gif');
       background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
     }
 
     .container {
-      margin-top: 15%;
-      background-color: rgba(0, 0, 0, 0.6);
-      display: inline-block;
-      padding: 20px 30px;
-      border-radius: 10px;
+      background-color: rgba(0, 0, 0, 0.75);
+      padding: 40px;
+      margin: 100px auto;
+      max-width: 500px;
+      border-radius: 20px;
       box-shadow: 0 0 20px red;
     }
 
     h1 {
+      color: red;
       font-size: 32px;
+      text-shadow: 0 0 5px black;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
       margin-bottom: 20px;
-      text-shadow: 2px 2px 5px black;
     }
 
-    .info {
-      font-size: 16px;
+    ul li {
       margin: 10px 0;
-      color: #ffcccc;
     }
 
-    .buy-button {
+    button {
       background-color: red;
       color: white;
-      padding: 10px 25px;
+      padding: 12px 25px;
       border: none;
       border-radius: 6px;
-      font-size: 18px;
+      font-size: 16px;
       cursor: pointer;
-      margin-top: 15px;
+      margin-bottom: 20px;
     }
 
-    .buy-button:hover {
-      background-color: darkred;
-    }
-
-    .address {
-      margin-top: 20px;
+    .contract {
       font-size: 12px;
+      word-break: break-all;
       color: #ccc;
     }
 
-    audio {
-      display: none;
+    #countdown {
+      font-size: 16px;
+      color: orange;
+      margin-bottom: 15px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Demon Slayer Coin (DSC)</h1>
-    <div class="info">🔸 Price: 0.00000727 BNB per DSC</div>
-    <div class="info">🔸 Total Supply: 1,000,000,000</div>
-    <div class="info">🔸 Presale Supply: 500,000,000</div>
-    <button class="buy-button" onclick="buy()">Buy Now with MetaMask</button>
-    <div class="address">
-      Contract Address: <br>
-      0x2106b5C4A249cAc7e27b7BE165517b43a00b290a
-    </div>
-  </div>
 
+  <!-- صوت تلقائي -->
   <audio autoplay loop>
-    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    <source src="https://dl.sndup.net/z3pt/DemonSlayerBattle.mp3" type="audio/mp3">
   </audio>
 
+  <div class="container">
+    <h1>Demon Slayer Coin (DSC)</h1>
+
+    <ul>
+      <li>🔥 Price: 0.00000727 BNB per DSC</li>
+      <li>🩸 Total Supply: 1,000,000,000</li>
+      <li>⚔️ Presale Supply: 500,000,000</li>
+    </ul>
+
+    <div id="countdown">⌛ Sale ends in: --:--:--</div>
+
+    <button onclick="buyTokens()">Buy Now with MetaMask</button>
+    <br>
+    <button onclick="copyAddress()">📋 Copy Contract Address</button>
+
+    <p class="contract">Contract Address: <br> 
+      <span id="contract">0x2106b5C4A249cAc7e27b7BE165517b43a00b290a</span>
+    </p>
+  </div>
+
   <script>
-    async function buy() {
-      alert("Connect MetaMask to Buy DSC Coin!");
+    const contractAddress = "0x2106b5C4A249cAc7e27b7BE165517b43a00b290a";
+    const tokenPrice = 0.00000727;
+
+    function buyTokens() {
+      const amount = prompt("Enter amount of DSC you want to buy:");
+      if (!amount) return;
+
+      const value = (tokenPrice * amount).toFixed(18);
+
+      if (typeof window.ethereum !== 'undefined') {
+        ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {
+          const transactionParams = {
+            to: contractAddress,
+            from: accounts[0],
+            value: parseInt(window.web3.utils.toWei(value.toString(), 'ether')).toString(16),
+          };
+          ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [transactionParams],
+          }).then(tx => {
+            alert('Transaction sent: ' + tx);
+          }).catch(err => alert('Transaction failed: ' + err.message));
+        });
+      } else {
+        alert('MetaMask not found!');
+      }
     }
+
+    function copyAddress() {
+      navigator.clipboard.writeText(contractAddress).then(() => {
+        alert("Copied: " + contractAddress);
+      });
+    }
+
+    // عداد تنازلي 24 ساعة
+    const end = new Date();
+    end.setHours(end.getHours() + 24);
+    function updateCountdown() {
+      const now = new Date();
+      const diff = end - now;
+      if (diff <= 0) {
+        document.getElementById("countdown").innerText = "🛑 Sale ended";
+        return;
+      }
+      const hours = Math.floor(diff / 1000 / 60 / 60);
+      const minutes = Math.floor((diff / 1000 / 60) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      document.getElementById("countdown").innerText =
+        `⌛ Sale ends in: ${hours}h ${minutes}m ${seconds}s`;
+    }
+    setInterval(updateCountdown, 1000);
   </script>
+
+  <!-- Web3 -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.8.2/dist/web3.min.js"></script>
+
 </body>
 </html>
