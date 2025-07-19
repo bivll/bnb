@@ -3,74 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <title>Demon Slayer Coin (DSC)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     html, body {
       margin: 0;
       padding: 0;
+      height: 100%;
       overflow: hidden;
-      font-family: 'Arial', sans-serif;
-      color: #fff;
-    }
-
-    video#bgVideo {
-      position: fixed;
-      top: 0;
-      left: 0;
-      min-width: 100%;
-      min-height: 100%;
-      z-index: -1;
-      object-fit: cover;
-    }
-
-    .container {
+      font-family: Arial, sans-serif;
+      color: white;
       text-align: center;
+    }
+    video.bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
+      filter: brightness(0.4);
+    }
+    .container {
       position: relative;
       top: 50%;
       transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0,0,0,0.6);
       padding: 30px;
-      border-radius: 10px;
-      max-width: 500px;
+      border-radius: 12px;
+      max-width: 480px;
       margin: auto;
+      box-shadow: 0 0 20px red;
     }
-
+    h1 { font-size: 36px; margin-bottom: 15px; text-shadow: 0 0 10px red; }
+    .info { margin: 8px 0; font-size: 18px; }
     .btn {
-      background: red;
-      color: white;
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: red; color: white;
       border: none;
-      padding: 12px 20px;
-      margin-top: 10px;
-      font-size: 16px;
+      font-size: 18px;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 6px;
+      transition: background 0.3s;
     }
-
-    .btn:hover {
-      background: #b30000;
-    }
-
-    .info {
-      margin: 10px 0;
-      font-size: 16px;
-    }
-
+    .btn:hover { background: darkred; }
     .address {
-      font-size: 14px;
-      margin-top: 10px;
+      margin-top: 15px; font-size: 14px;
+      word-break: break-all;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
 
-  <!-- خلفية فيديو أنمي Demon Slayer -->
-  <video id="bgVideo" autoplay loop muted playsinline>
-    <source src="https://cdn.pixabay.com/video/2023/04/05/158217-818353029_large.mp4" type="video/mp4">
-    Your browser does not support HTML5 video.
+  <!-- خلفية فيديو -->
+  <video class="bg" autoplay muted loop playsinline>
+    <source src="https://cdn.pixabay.com/video/2023/06/02/167175-829014931_large.mp4" type="video/mp4">
   </video>
 
-  <!-- الصوت -->
-  <audio autoplay loop>
-    <source src="https://files.catbox.moe/w6d0n5.mp3" type="audio/mpeg">
+  <!-- صوت موسيقي -->
+  <audio id="bgMusic" autoplay loop>
+    <source src="https://pixabay.com/download/audio/2022/03/15/audio_995f4e6e04.mp3?filename=digital-epic-143276.mp3" type="audio/mpeg">
   </audio>
 
   <div class="container">
@@ -78,34 +71,42 @@
     <div class="info">💰 Price: 0.00000727 BNB per DSC</div>
     <div class="info">📦 Total Supply: 1,000,000,000</div>
     <div class="info">🔥 Presale Supply: 500,000,000</div>
-    <button class="btn" onclick="buyToken()">Buy Now with MetaMask</button>
-    <br>
-    <button class="btn" onclick="copyAddress()">📋 Copy Contract</button>
-    <div class="address">Contract Address: <br>0x2106b5C4A249cAc7e27b7BE165517b43a00b290a</div>
+
+    <button class="btn" onclick="buyToken()">Buy Now with MetaMask</button><br>
+    <button class="btn" onclick="copyAddress()">📋 Copy Contract Address</button>
+
+    <div class="address">
+      Contract Address:<br>
+      <strong>0x2106b5C4A249cAc7e27b7BE165517b43a00b290a</strong>
+    </div>
   </div>
 
   <script>
     async function buyToken() {
-      const contractAddress = "0x2106b5C4A249cAc7e27b7BE165517b43a00b290a";
-      const dscPrice = 0.00000727; // BNB per token
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      if (typeof window.ethereum === 'undefined') {
+        return alert('Please install MetaMask.');
+      }
+      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
       const amount = prompt("Enter amount of DSC to buy:");
-      const bnbAmount = (amount * dscPrice).toFixed(8);
-      const transactionParameters = {
-        to: contractAddress,
-        from: accounts[0],
-        value: (parseFloat(bnbAmount) * 1e18).toString(16),
-      };
-      await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [transactionParameters],
-      });
+      if (!amount) return alert('Cancelled.');
+      const price = 0.00000727;
+      const valueInWei = (parseFloat(amount) * price * 1e18).toString(16);
+      try {
+        await ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{ from: accounts[0], to: '0x2106b5C4A249cAc7e27b7BE165517b43a00b290a', value: '0x'+valueInWei }]
+        });
+        alert('✅ Transaction sent.');
+      } catch(e) {
+        alert('❌ Transaction failed.');
+        console.error(e);
+      }
     }
 
     function copyAddress() {
-      const address = "0x2106b5C4A249cAc7e27b7BE165517b43a00b290a";
-      navigator.clipboard.writeText(address);
-      alert("Contract address copied!");
+      const addr = '0x2106b5C4A249cAc7e27b7BE165517b43a00b290a';
+      navigator.clipboard.writeText(addr);
+      alert('Contract address copied!');
     }
   </script>
 
