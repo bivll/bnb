@@ -3,175 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <title>Demon Slayer Coin (DSC)</title>
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Unbounded', sans-serif;
-      color: white;
-      overflow: hidden;
-    }
-
-    video {
+    /* خلفية فيديو */
+    #bgVideo {
       position: fixed;
-      top: 0; left: 0;
+      right: 0;
+      bottom: 0;
       min-width: 100%;
       min-height: 100%;
-      object-fit: cover;
       z-index: -1;
+      filter: brightness(0.5);
     }
 
-    .overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.65);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
       text-align: center;
-      padding: 20px;
+      background: #000;
     }
 
     h1 {
-      font-size: 45px;
-      color: #ff2e2e;
-      text-shadow: 0 0 10px red;
-      margin-bottom: 15px;
+      margin-top: 100px;
+      font-size: 42px;
+      color: #ff3b3b;
+      text-shadow: 0 0 10px #ff3b3b;
     }
 
-    .info-box {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 25px;
-      border-radius: 10px;
-      border: 1px solid red;
-      margin-bottom: 15px;
+    .box {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px 40px;
+      margin: 20px auto;
+      border-radius: 15px;
+      width: fit-content;
+      box-shadow: 0 0 10px #ff3b3b;
     }
 
-    .info-box p {
-      margin: 8px 0;
-      font-size: 18px;
-    }
-
-    .buy-btn {
-      background: red;
+    .button {
+      margin-top: 20px;
+      background-color: #ff3b3b;
       color: white;
-      padding: 14px 28px;
-      font-size: 18px;
+      padding: 12px 24px;
       border: none;
       border-radius: 6px;
+      font-size: 16px;
       cursor: pointer;
-      transition: background 0.3s;
+      box-shadow: 0 0 10px #ff3b3b;
     }
 
-    .buy-btn:hover {
-      background: darkred;
-    }
-
-    .countdown {
-      margin-top: 20px;
-      font-size: 20px;
-      color: #ffcaca;
+    .button:hover {
+      background-color: #cc0000;
     }
 
     .contract {
+      margin-top: 20px;
       font-size: 14px;
-      margin-top: 10px;
-      color: #ddd;
+      color: #ccc;
     }
 
-    .copy-btn {
-      background: #333;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      font-size: 13px;
-      margin-top: 5px;
-      cursor: pointer;
+    #controls {
+      margin-top: 10px;
     }
 
   </style>
 </head>
 <body>
 
-<video autoplay muted loop>
-  <source src="https://cdn.pixabay.com/video/2023/11/01/187487-878408536_large.mp4" type="video/mp4">
-</video>
+  <!-- خلفية فيديو Demon Slayer -->
+  <video autoplay muted loop id="bgVideo">
+    <source src="https://cdn.pixabay.com/video/2023/06/02/167175-829014931_large.mp4" type="video/mp4">
+  </video>
 
-<div class="overlay">
+  <!-- صوت موسيقى Demon Slayer -->
+  <audio id="bgMusic" autoplay loop>
+    <source src="https://dl.sndup.net/nx6q/DemonSlayerTheme.mp3" type="audio/mpeg">
+  </audio>
+
   <h1>Demon Slayer Coin (DSC)</h1>
-  
-  <div class="info-box">
-    <p>🔺 Price: <b>0.00000727 BNB</b> per DSC</p>
-    <p>💠 Total Supply: <b>1,000,000,000</b></p>
-    <p>🔥 Presale Supply: <b>500,000,000</b></p>
+
+  <div class="box">
+    <p>🔥 Price: 0.00000727 BNB per DSC</p>
+    <p>📦 Total Supply: 1,000,000,000</p>
+    <p>🚀 Presale Supply: 500,000,000</p>
+    <button class="button" onclick="buyToken()">Buy Now with MetaMask</button>
   </div>
 
-  <button class="buy-btn" onclick="buyToken()">Buy Now with MetaMask</button>
-
-  <div class="countdown" id="countdown">⌛ Loading countdown...</div>
+  <div id="controls">
+    <button class="button" onclick="document.getElementById('bgMusic').play()">🔊 تشغيل الصوت</button>
+    <button class="button" onclick="document.getElementById('bgMusic').pause()">🔇 إيقاف الصوت</button>
+  </div>
 
   <div class="contract">
-    Contract Address: <span id="contract">0xE94De7162C73Cb6a774079c5398A80A5C0254cd6</span><br>
-    <button class="copy-btn" onclick="copyAddress()">Copy Address</button>
+    Contract Address: <br>
+    <strong>0x2106b5C4A249cAc7e27b7BE165517b43a00b290a</strong>
   </div>
-</div>
 
-<script>
-  function copyAddress() {
-    const address = document.getElementById("contract").innerText;
-    navigator.clipboard.writeText(address);
-    alert("تم نسخ عنوان العقد!");
-  }
+  <script>
+    async function buyToken() {
+      const amount = prompt("Enter amount of DSC you want to buy:");
+      if (!amount) return;
 
-  async function buyToken() {
-    const to = "0xE94De7162C73Cb6a774079c5398A80A5C0254cd6";
-    const amountBNB = 0.01;
+      const pricePerToken = 0.00000727;
+      const totalCost = amount * pricePerToken;
 
-    if (typeof window.ethereum !== 'undefined') {
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const transaction = {
-          from: accounts[0],
-          to: to,
-          value: '0x' + (amountBNB * 1e18).toString(16)
-        };
-        await ethereum.request({ method: 'eth_sendTransaction', params: [transaction] });
-        alert('✅ تم الشراء بنجاح!');
-      } catch (error) {
-        alert('❌ فشل الشراء: ' + error.message);
+      if (typeof window.ethereum === 'undefined') {
+        alert("Please install MetaMask first.");
+        return;
       }
-    } else {
-      alert("يرجى تثبيت MetaMask أولاً.");
+
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const from = accounts[0];
+
+      const transactionParams = {
+        to: "0x2106b5C4A249cAc7e27b7BE165517b43a00b290a", // عقدك
+        from,
+        value: "0x" + (totalCost * 1e18).toString(16)
+      };
+
+      try {
+        await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [transactionParams],
+        });
+        alert('✅ Transaction sent!');
+      } catch (err) {
+        alert('❌ Transaction failed.');
+        console.error(err);
+      }
     }
-  }
-
-  // Countdown
-  const endDate = new Date("2025-08-20T00:00:00Z").getTime();
-  const countdownEl = document.getElementById("countdown");
-
-  const interval = setInterval(() => {
-    const now = new Date().getTime();
-    const diff = endDate - now;
-
-    if (diff <= 0) {
-      countdownEl.innerText = "⛔️ انتهى البيع المسبق.";
-      clearInterval(interval);
-      return;
-    }
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    countdownEl.innerText = `⏳ ينتهي خلال: ${days}ي ${hours}س ${minutes}د ${seconds}ث`;
-  }, 1000);
-</script>
+  </script>
 
 </body>
 </html>
